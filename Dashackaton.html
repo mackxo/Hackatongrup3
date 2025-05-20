@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard ERP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-100 to-blue-50 text-gray-800 font-sans min-h-screen">
+  <!-- Encabezado principal -->
+  <header class="bg-blue-800 text-white p-6 shadow-md">
+    <h1 class="text-3xl font-bold flex items-center gap-2">📊 ERP Dashboard <span class="text-sm bg-blue-600 px-2 py-1 rounded-full">Versión Beta</span></h1>
+    <p class="text-sm mt-1 text-blue-200">Análisis financiero y operativo de tu negocio</p>
+  </header>
+
+  <!-- Contenedor general -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 p-6">
+    <!-- Filtros -->
+    <aside class="md:col-span-1 bg-white rounded-2xl shadow-xl p-5">
+      <h2 class="text-xl font-semibold mb-4">🎯 Filtros</h2>
+      <form class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium">Mes:</label>
+          <select class="w-full border rounded p-2">
+            <option>Enero</option>
+            <option>Febrero</option>
+            <option>Marzo</option>
+            <option>Abril</option>
+            <option>Mayo</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Tipo de KPI:</label>
+          <select class="w-full border rounded p-2">
+            <option>Facturación</option>
+            <option>Clientes frecuentes</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full bg-blue-700 hover:bg-blue-600 text-white p-2 rounded transition-all">Aplicar</button>
+      </form>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="md:col-span-3 space-y-6">
+      <!-- Tarjetas de indicadores -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-lg text-center border-l-8 border-green-500">
+          <h3 class="text-sm font-medium text-gray-500">Ingresos</h3>
+          <p class="text-3xl font-bold text-blue-800" id="kpiIngresos">$120,000</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow-lg text-center border-l-8 border-yellow-400">
+          <h3 class="text-sm font-medium text-gray-500">Clientes Frecuentes</h3>
+          <p class="text-3xl font-bold text-blue-800">342</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow-lg text-center border-l-8 border-blue-400">
+          <h3 class="text-sm font-medium text-gray-500">Alertas de Desempeño</h3>
+          <p class="text-3xl font-bold" id="alertaIngreso">🔵 Estable</p>
+        </div>
+      </div>
+
+      <!-- Gráfico de ventas -->
+      <div class="bg-white p-6 rounded-2xl shadow-lg">
+        <div class="flex justify-between items-center mb-4">
+          <h4 class="text-xl font-semibold">📈 Ventas Mensuales</h4>
+          <div class="flex gap-2">
+            <button onclick="mostrarModal('modalAgregar')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded">Agregar</button>
+            <button onclick="mostrarModal('modalDescontar')" class="bg-yellow-600 hover:bg-yellow-500 text-white px-4 py-2 rounded">Descontar</button>
+          </div>
+        </div>
+        <div id="chartVentas" class="h-64"></div>
+
+        <!-- Modal Agregar -->
+        <div id="modalAgregar" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div class="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-4">Agregar Ingreso</h3>
+            <form onsubmit="agregarDato(); return false;" class="space-y-4">
+              <select id="nuevoMes" class="w-full border rounded p-2">
+                <option value="">Selecciona un mes</option>
+                <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option>
+                <option>Junio</option><option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+              </select>
+              <input type="number" id="nuevoIngreso" placeholder="Ej: 10000" class="w-full border rounded p-2" />
+              <div class="flex justify-end gap-2">
+                <button type="button" onclick="cerrarModal('modalAgregar')" class="px-4 py-2 rounded bg-gray-300">Cancelar</button>
+                <button type="submit" class="px-4 py-2 rounded bg-green-600 text-white">Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Modal Descontar -->
+        <div id="modalDescontar" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div class="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-4">Descontar Monto</h3>
+            <form onsubmit="descontarDato(); return false;" class="space-y-4">
+              <select id="mesEliminar" class="w-full border rounded p-2"></select>
+              <input type="number" id="montoDescontar" placeholder="Monto a descontar" class="w-full border rounded p-2" />
+              <div class="flex justify-end gap-2">
+                <button type="button" onclick="cerrarModal('modalDescontar')" class="px-4 py-2 rounded bg-gray-300">Cancelar</button>
+                <button type="submit" class="px-4 py-2 rounded bg-yellow-600 text-white">Descontar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Análisis descriptivo -->
+      <div class="bg-white p-6 rounded-2xl shadow-lg">
+        <h4 class="text-xl font-semibold mb-4">📊 Análisis Descriptivo</h4>
+        <p><strong>Promedio:</strong> <span id="promedio"></span></p>
+        <p><strong>Desviación estándar:</strong> <span id="desviacion"></span></p>
+      </div>
+    </main>
+  </div>
+
+  <footer class="text-center text-sm text-gray-500 py-6">
+    Hackatón ERP | © 2025 — Simulación con backend en Python disponible
+  </footer>
+
+  <!-- Script principal -->
+  <script>
+    let meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo'];
+    let ingresos = [5000, 7000, 6000, 8000, 9500];
+
+    function renderGrafico() {
+      Plotly.newPlot('chartVentas', [{
+        x: meses,
+        y: ingresos,
+        type: 'bar',
+        marker: { color: ingresos.map(v => v < 4000 ? 'red' : '#3b82f6') }
+      }], {
+        xaxis: { title: 'Mes' },
+        yaxis: { title: 'Ingresos ($)' },
+        margin: { t: 30 }
+      }, { displayModeBar: false });
+
+      actualizarAnalisis();
+      actualizarSelectorEliminar();
+    }
+
+    function agregarDato() {
+      const mes = document.getElementById('nuevoMes').value.trim();
+      const ingreso = parseFloat(document.getElementById('nuevoIngreso').value);
+      if (!mes || isNaN(ingreso) || ingreso <= 0) return alert('Ingrese valores válidos.');
+      meses.push(mes);
+      ingresos.push(ingreso);
+      cerrarModal('modalAgregar');
+      renderGrafico();
+    }
+
+    function descontarDato() {
+      const mes = document.getElementById('mesEliminar').value;
+      const monto = parseFloat(document.getElementById('montoDescontar').value);
+      const index = meses.indexOf(mes);
+      if (index >= 0 && monto > 0 && monto <= ingresos[index]) {
+        ingresos[index] -= monto;
+        cerrarModal('modalDescontar');
+        renderGrafico();
+      } else {
+        alert('Monto inválido.');
+      }
+    }
+
+    function actualizarSelectorEliminar() {
+      const select = document.getElementById('mesEliminar');
+      select.innerHTML = '';
+      meses.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.innerText = m;
+        select.appendChild(opt);
+      });
+    }
+
+    function actualizarAnalisis() {
+      const prom = ingresos.reduce((a, b) => a + b, 0) / ingresos.length;
+      const desv = Math.sqrt(ingresos.reduce((acc, val) => acc + Math.pow(val - prom, 2), 0) / ingresos.length);
+      document.getElementById('promedio').innerText = `$${prom.toFixed(2)}`;
+      document.getElementById('desviacion').innerText = `$${desv.toFixed(2)}`;
+      const alerta = document.getElementById('alertaIngreso');
+      alerta.innerText = prom < 6000 ? '🔴 Bajo' : prom > 9000 ? '🟢 Alto' : '🔵 Estable';
+      alerta.className = `text-3xl font-bold ${prom < 6000 ? 'text-red-600' : prom > 9000 ? 'text-green-600' : 'text-blue-600'}`;
+      document.getElementById('kpiIngresos').innerText = `$${ingresos.reduce((a,b)=>a+b,0)}`;
+    }
+
+    function mostrarModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function cerrarModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    renderGrafico();
+  </script>
+</body>
+</html>
