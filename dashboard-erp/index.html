@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard ERP</title>
+
+  <!-- ✅ Tailwind CSS para estilos rápidos -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- ✅ Plotly.js para crear gráficos interactivos -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  
+  <style>
+    /* Estilos personalizados para el Dashboard ERP */
+
+    /* Estilos para las tarjetas de KPIs */
+    .kpi-card {
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Estilos para las pestañas de navegación */
+    .tab-button {
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .tab-button.active {
+      color: #3b82f6;
+      font-weight: 600;
+    }
+
+    .tab-button.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: #3b82f6;
+    }
+
+    /* Estilos para las tablas de datos */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      background-color: #f3f4f6;
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .data-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .data-table tbody tr:hover {
+      background-color: #f9fafb;
+    }
+
+    /* Estilos para los contenedores de gráficos */
+    .chart-container {
+      position: relative;
+      min-height: 300px;
+      transition: all 0.3s ease;
+    }
+
+    .chart-container:hover {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Estilos para el panel de flujo de caja */
+    .cash-flow-panel {
+      border-left: 4px solid #3b82f6;
+    }
+
+    .cash-flow-positive {
+      color: #10b981;
+    }
+
+    .cash-flow-negative {
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+  <!-- 🔵 Encabezado del dashboard -->
+  <header class="bg-blue-800 text-white p-4 shadow-md">
+    <h1 class="text-2xl font-bold">📊 ERP Dashboard - Indicadores Clave</h1>
+  </header>
+
+  <!-- 🧭 Navegación principal -->
+  <nav class="bg-white shadow-sm p-4">
+    <div class="flex space-x-6 overflow-x-auto">
+      <button class="tab-button active px-3 py-2" data-target="panelDashboard">📊 Dashboard</button>
+      <button class="tab-button px-3 py-2" data-target="panelFlujoCaja">💰 Flujo de Caja</button>
+      <button class="tab-button px-3 py-2" data-target="panelEgresos">📉 Egresos</button>
+      <button class="tab-button px-3 py-2" data-target="panelNominas">👥 Nóminas</button>
+      <button class="tab-button px-3 py-2" data-target="panelFacturas">🧾 Facturas</button>
+    </div>
+  </nav>
+  
+  <!-- 📦 Contenedor principal en cuadrícula -->
+  <div id="panelDashboard" class="tab-panel grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
+
+    <!-- 🧭 Barra lateral con filtros -->
+    <aside class="md:col-span-1 bg-white rounded-xl shadow-md p-4">
+      <h2 class="text-lg font-semibold mb-2">Filtros</h2>
+      <form class="space-y-2">
+        <!-- Filtro por mes -->
+        <div>
+          <label class="block text-sm font-medium">Mes:</label>
+          <select id="selectMes" class="w-full border rounded p-1">
+            <option>Enero</option>
+            <option>Febrero</option>
+            <option>Marzo</option>
+            <option>Abril</option>
+            <option selected>Mayo</option>
+          </select>
+        </div>
+
+        <!-- Filtro por tipo de KPI -->
+        <div>
+          <label class="block text-sm font-medium">Tipo de KPI:</label>
+          <select class="w-full border rounded p-1">
+            <option>Facturación</option>
+            <option>Inventario</option>
+            <option>Clientes frecuentes</option>
+          </select>
+        </div>
+
+        <!-- Botón para aplicar filtros -->
+        <button type="submit" class="w-full bg-blue-700 hover:bg-blue-600 text-white p-2 rounded">
+          Aplicar
+        </button>
+      </form>
+    </aside>
+
+    <!-- 📊 Contenido principal con KPIs y gráficas -->
+    <main class="md:col-span-3 space-y-4">
+
+      <!-- KPIs en tarjetas -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-md text-center">
+          <h3 class="text-sm font-medium text-gray-500">Ingresos</h3>
+          <p class="text-2xl font-bold">$120,000</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md text-center">
+          <h3 class="text-sm font-medium text-gray-500">Clientes Frecuentes</h3>
+          <p class="text-2xl font-bold">342</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md text-center">
+          <h3 class="text-sm font-medium text-gray-500">Inventario Disponible</h3>
+          <p class="text-2xl font-bold">1,220</p>
+        </div>
+      </div>
+
+      <!-- 📈 Gráficas -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Aquí se dibuja la gráfica de barras con Plotly -->
+        <div class="bg-white p-4 rounded-xl shadow-md">
+          <h4 class="text-lg font-semibold mb-2">Ventas Mensuales</h4>
+          <div id="chartVentas" class="h-64"></div>
+        </div>
+
+        <!-- Gráfica placeholder futura -->
+        <div class="bg-white p-4 rounded-xl shadow-md">
+          <h4 class="text-lg font-semibold mb-2">Inventario por Categoría</h4>
+          <div id="chartInventario" class="h-64 flex items-center justify-center text-gray-400">[Próximamente]</div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <!-- 💰 Panel de Flujo de Caja -->
+  <div id="panelFlujoCaja" class="tab-panel hidden p-4">
+    <div class="grid grid-cols-1 gap-4">
+      <!-- Tarjetas de KPIs de flujo de caja -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-md text-center kpi-card cash-flow-panel">
+          <h3 class="text-sm font-medium text-gray-500">Ingresos</h3>
+          <p id="kpiIngresos" class="text-2xl font-bold">$0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md text-center kpi-card cash-flow-panel">
+          <h3 class="text-sm font-medium text-gray-500">Egresos</h3>
+          <p id="kpiEgresos" class="text-2xl font-bold">$0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md text-center kpi-card cash-flow-panel">
+          <h3 class="text-sm font-medium text-gray-500">Balance</h3>
+          <p id="kpiBalance" class="text-2xl font-bold">$0</p>
+          <p id="porcentajeBalance" class="text-sm">0%</p>
+        </div>
+      </div>
+      
+      <!-- Gráfico de flujo de caja -->
+      <div class="bg-white p-4 rounded-xl shadow-md chart-container">
+        <h4 class="text-lg font-semibold mb-2">Flujo de Caja Mensual</h4>
+        <div id="chartFlujoCaja" class="h-80"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 📉 Panel de Egresos -->
+  <div id="panelEgresos" class="tab-panel hidden p-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Tabla de egresos por proveedor -->
+      <div class="bg-white p-4 rounded-xl shadow-md md:col-span-2">
+        <h4 class="text-lg font-semibold mb-4">Egresos por Proveedor</h4>
+        <div id="tablaEgresosProveedores" class="overflow-x-auto"></div>
+      </div>
+      
+      <!-- Gráfico de egresos por proveedor -->
+      <div class="bg-white p-4 rounded-xl shadow-md chart-container">
+        <h4 class="text-lg font-semibold mb-2">Egresos por Proveedor</h4>
+        <div id="chartEgresosProveedores" class="h-80"></div>
+      </div>
+      
+      <!-- Gráfico de egresos por categoría -->
+      <div class="bg-white p-4 rounded-xl shadow-md chart-container">
+        <h4 class="text-lg font-semibold mb-2">Egresos por Categoría</h4>
+        <div id="chartEgresosCategorias" class="h-80"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 👥 Panel de Nóminas -->
+  <div id="panelNominas" class="tab-panel hidden p-4">
+    <div class="grid grid-cols-1 gap-4">
+      <!-- Tarjetas de KPIs de nóminas -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-md text-center kpi-card">
+          <h3 class="text-sm font-medium text-gray-500">TOTAL NÓMINA MENSUAL</h3>
+          <p id="kpiTotalNomina" class="text-2xl font-bold">$138,000</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md text-center kpi-card">
+          <h3 class="text-sm font-medium text-gray-500">SALARIO PROMEDIO</h3>
+          <p id="kpiPromedioSalario" class="text-2xl font-bold">$5,880</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md text-center kpi-card">
+          <h3 class="text-sm font-medium text-gray-500">INCREMENTO ANUAL</h3>
+          <p id="kpiIncrementoAnual" class="text-2xl font-bold">4.5%</p>
+        </div>
+      </div>
+      
+      <!-- Gráficos de nóminas -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-md chart-container">
+          <h4 class="text-lg font-semibold mb-2">Nómina por Departamento</h4>
+          <div id="chartNominasDepartamento" class="h-64"></div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md chart-container">
+          <h4 class="text-lg font-semibold mb-2">Distribución de Nómina</h4>
+          <div id="chartDistribucionNomina" class="h-64"></div>
+        </div>
+      </div>
+      
+      <!-- Gráfico de evolución de nóminas -->
+      <div class="bg-white p-4 rounded-xl shadow-md chart-container">
+        <h4 class="text-lg font-semibold mb-2">Evolución de Nóminas por Departamento</h4>
+        <div id="chartEvolucionNominas" class="h-64"></div>
+      </div>
+      
+      <!-- Tabla de nóminas -->
+      <div class="bg-white p-4 rounded-xl shadow-md">
+        <h4 class="text-lg font-semibold mb-2">Detalle de Nómina por Empleado</h4>
+        <div id="tablaNominas" class="overflow-x-auto"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 🧾 Panel de Facturas -->
+  <div id="panelFacturas" class="tab-panel hidden p-4">
+    <div class="grid grid-cols-1 gap-4">
+      <!-- Tarjetas de KPIs de facturación -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-md text-center kpi-card">
+          <h3 class="text-sm font-medium text-gray-500">TOTAL FACTURADO</h3>
+          <p id="kpiTotalFacturado" class="text-2xl font-bold">$660,000</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md text-center kpi-card">
+          <h3 class="text-sm font-medium text-gray-500">PROMEDIO POR FACTURA</h3>
+          <p id="kpiPromedioFactura" class="text-2xl font-bold">$2,750</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md text-center kpi-card">
+          <h3 class="text-sm font-medium text-gray-500">PENDIENTE DE COBRO</h3>
+          <p id="kpiPendienteCobro" class="text-2xl font-bold">$120,000</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md text-center kpi-card">
+          <h3 class="text-sm font-medium text-gray-500">TIEMPO PROMEDIO DE COBRO</h3>
+          <p id="kpiTiempoCobro" class="text-2xl font-bold">32 días</p>
+        </div>
+      </div>
+      
+      <!-- Gráficos de facturación -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-md chart-container">
+          <h4 class="text-lg font-semibold mb-2">Facturación Mensual</h4>
+          <div id="chartFacturasMensuales" class="h-64"></div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md chart-container">
+          <h4 class="text-lg font-semibold mb-2">Top 5 Clientes</h4>
+          <div id="chartFacturasPorCliente" class="h-64"></div>
+        </div>
+      </div>
+      
+      <!-- Gráficos adicionales de facturación -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-md chart-container">
+          <h4 class="text-lg font-semibold mb-2">Estado de Facturas</h4>
+          <div id="chartEstadoFacturas" class="h-64"></div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-md chart-container">
+          <h4 class="text-lg font-semibold mb-2">Top 5 Productos/Servicios</h4>
+          <div id="chartFacturasPorProducto" class="h-64"></div>
+        </div>
+      </div>
+      
+      <!-- Tabla de facturas por cliente -->
+      <div class="bg-white p-4 rounded-xl shadow-md">
+        <h4 class="text-lg font-semibold mb-2">Detalle de Facturación por Cliente</h4>
+        <div id="tablaFacturas" class="overflow-x-auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 👣 Pie de página -->
+  <footer class="text-center text-sm text-gray-500 py-4">
+    Hackatón ERP | © 2025
+  </footer>
+
+  <!-- 📌 SCRIPT: Datos financieros y funciones -->
+  <!-- Cargar archivos de datos -->
+  <script src="data/datos_financieros.js"></script>
+  <script src="data/datos_nominas.js"></script>
+  <script src="data/datos_facturas.js"></script>
+
+  <script>
+    // Funciones para gráficos
+    function inicializarGraficos() {
+      crearGraficoVentas();
+      crearGraficoFlujoCaja();
+      crearGraficoEgresosProveedores();
+      crearGraficoEgresosCategorias();
+    }
+
+    function crearGraficoVentas() {
+      // Paso 1: Definimos los datos del gráfico
+      const datosVentas = {
+        x: datosFlujoMensual.meses,  // Eje X (categorías)
+        y: datosFlujoMensual.ingresos,  // Eje Y (valores)
+        type: 'bar',  // Tipo de gráfico: barras
+        marker: {
+          color: '#3b82f6' // Color azul (Tailwind blue-500)
+        },
+        name: 'Ingresos'
+      };
+
+      // Paso 2: Configuramos el diseño del gráfico
+      const layoutVentas = {
+        title: 'Ventas Mensuales',  // Título del gráfico
+        xaxis: { title: 'Mes' },  // Etiqueta eje X
+        yaxis: { title: 'Ingresos ($)' }  // Etiqueta eje Y
+      };
+
+      // Paso 3: Dibujamos el gráfico en el contenedor
+      Plotly.newPlot('chartVentas', [datosVentas], layoutVentas);
+    }
+
+    function crearGraficoFlujoCaja() {
+      // Datos de ingresos
+      const datosIngresos = {
+        x: datosFlujoMensual.meses,
+        y: datosFlujoMensual.ingresos,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Ingresos',
+        line: {
+          color: '#10b981', // Verde (Tailwind green-500)
+          width: 3
+        },
+        marker: {
+          size: 8
+        }
+      };
+
+      // Datos de egresos
+      const datosEgresos = {
+        x: datosFlujoMensual.meses,
+        y: datosFlujoMensual.egresos,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Egresos',
+        line: {
+          color: '#ef4444', // Rojo (Tailwind red-500)
+          width: 3
+        },
+        marker: {
+          size: 8
+        }
+      };
+
+      // Balance (diferencia entre ingresos y egresos)
+      const datosBalance = {
+        x: datosFlujoMensual.meses,
+        y: datosFlujoMensual.ingresos.map((ingreso, i) => ingreso - datosFlujoMensual.egresos[i]),
+        type: 'bar',
+        name: 'Balance',
+        marker: {
+          color: datosFlujoMensual.ingresos.map((ingreso, i) => 
+            (ingreso - datosFlujoMensual.egresos[i]) >= 0 ? '#10b981' : '#ef4444'
+          )
+        }
+      };
+
+      // Configuración del gráfico
+      const layout = {
+        title: 'Flujo de Caja Mensual',
+        xaxis: { title: 'Mes' },
+        yaxis: { title: 'Monto ($)' },
+        legend: { orientation: 'h', y: -0.2 },
+        barmode: 'group'
+      };
+
+      // Dibujar el gráfico
+      Plotly.newPlot('chartFlujoCaja', [datosIngresos, datosEgresos, datosBalance], layout);
+    }
+
+    function crearGraficoEgresosProveedores() {
+      // Ordenamos los proveedores por monto (de mayor a menor)
+      const proveedoresOrdenados = [...datosEgresosPorProveedor].sort((a, b) => b.monto - a.monto);
+      
+      // Preparamos los datos para el gráfico
+      const datos = {
+        x: proveedoresOrdenados.map(item => item.proveedor),
+        y: proveedoresOrdenados.map(item => item.monto),
+        type: 'bar',
+        marker: {
+          color: '#8b5cf6', // Púrpura (Tailwind purple-500)
+          opacity: 0.8
+        },
+        text: proveedoresOrdenados.map(item => `$${item.monto.toLocaleString()}`),
+        textposition: 'auto',
+        hoverinfo: 'x+y',
+        hovertemplate: '<b>%{x}</b><br>$%{y:,.0f}<br>Categoría: %{customdata}<extra></extra>',
+        customdata: proveedoresOrdenados.map(item => item.categoria)
+      };
+
+      // Configuración del gráfico
+      const layout = {
+        title: 'Egresos por Proveedor',
+        xaxis: { title: 'Proveedor' },
+        yaxis: { title: 'Monto ($)' },
+        bargap: 0.2
+      };
+
+      // Dibujar el gráfico
+      Plotly.newPlot('chartEgresosProveedores', [datos], layout);
+    }
+
+    function crearGraficoEgresosCategorias() {
+      // Datos para el gráfico de pastel
+      const datos = {
+        labels: datosEgresosPorCategoria.categorias,
+        values: datosEgresosPorCategoria.montos,
+        type: 'pie',
+        hole: 0.4,
+        textinfo: 'label+percent',
+        textposition: 'outside',
+        automargin: true,
+        marker: {
+          colors: [
+            '#3b82f6', // Azul
+            '#8b5cf6', // Púrpura
+            '#ec4899', // Rosa
+            '#f97316', // Naranja
+            '#84cc16'  // Lima
+          ]
+        },
+        hoverinfo: 'label+value+percent',
+        hovertemplate: '<b>%{label}</b><br>$%{value:,.0f}<br>%{percent}<extra></extra>'
+      };
+
+      // Configuración del gráfico
+      const layout = {
+        title: 'Distribución de Egresos por Categoría',
+        showlegend: true,
+        legend: { orientation: 'h', y: -0.2 }
+      };
+
+      // Dibujar el gráfico
+      Plotly.newPlot('chartEgresosCategorias', [datos], layout);
+    }
+
+    // Funciones para flujo de caja
+    function actualizarIndicadoresFlujo() {
+      // Obtener el mes seleccionado (por defecto el último)
+      const mesSeleccionado = document.getElementById('selectMes')?.value || datosFlujoMensual.meses[datosFlujoMensual.meses.length - 1];
+      const indice = datosFlujoMensual.meses.indexOf(mesSeleccionado);
+      
+      // Calcular valores para el mes seleccionado
+      const ingresos = datosFlujoMensual.ingresos[indice];
+      const egresos = datosFlujoMensual.egresos[indice];
+      const balance = ingresos - egresos;
+      const porcentajeBalance = ((balance / ingresos) * 100).toFixed(1);
+      
+      // Actualizar los indicadores en el DOM
+      document.getElementById('kpiIngresos').textContent = `$${ingresos.toLocaleString()}`;
+      document.getElementById('kpiEgresos').textContent = `$${egresos.toLocaleString()}`;
+      document.getElementById('kpiBalance').textContent = `$${balance.toLocaleString()}`;
+      
+      // Actualizar clase de color según el balance
+      const kpiBalanceElement = document.getElementById('kpiBalance');
+      if (balance >= 0) {
+        kpiBalanceElement.className = 'text-2xl font-bold cash-flow-positive';
+      } else {
+        kpiBalanceElement.className = 'text-2xl font-bold cash-flow-negative';
+      }
+      
+      // Actualizar porcentaje de balance
+      document.getElementById('porcentajeBalance').textContent = `${porcentajeBalance}%`;
+      document.getElementById('porcentajeBalance').className = balance >= 0 ? 'text-sm cash-flow-positive' : 'text-sm cash-flow-negative';
+    }
+
+    function mostrarTablaEgresosProveedores() {
+      const tablaContainer = document.getElementById('tablaEgresosProveedores');
+      
+      // Ordenar proveedores por monto (de mayor a menor)
+      const proveedoresOrdenados = [...datosEgresosPorProveedor].sort((a, b) => b.monto - a.monto);
+      
+      // Crear tabla HTML
+      let tablaHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Proveedor</th>
+              <th>Categoría</th>
+              <th class="text-right">Monto</th>
+              <th class="text-right">% del Total</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      // Calcular total de egresos
+      const totalEgresos = proveedoresOrdenados.reduce((sum, item) => sum + item.monto, 0);
+      
+      // Generar filas de la tabla
+      proveedoresOrdenados.forEach(proveedor => {
+        const porcentaje = ((proveedor.monto / totalEgresos) * 100).toFixed(1);
+        tablaHTML += `
+          <tr>
+            <td>${proveedor.proveedor}</td>
+            <td>${proveedor.categoria}</td>
+            <td class="text-right">$${proveedor.monto.toLocaleString()}</td>
+            <td class="text-right">${porcentaje}%</td>
+          </tr>
+        `;
+      });
+      
+      // Agregar fila de total
+      tablaHTML += `
+          <tr class="font-semibold">
+            <td colspan="2">TOTAL</td>
+            <td class="text-right">$${totalEgresos.toLocaleString()}</td>
+            <td class="text-right">100%</td>
+          </tr>
+        </tbody>
+      </table>
+      `;
+      
+      //Insertar tabla en el DOM
+      tablaContainer.innerHTML = tablaHTML;
+    }
+
+    function inicializarFlujoCaja() {
+      // Actualizar indicadores
+      actualizarIndicadoresFlujo();
+      
+      // Mostrar tabla de egresos
+      mostrarTablaEgresosProveedores();
+      
+      // Configurar eventos
+      const selectMes = document.getElementById('selectMes');
+      if (selectMes) {
+        selectMes.addEventListener('change', () => {
+          actualizarIndicadoresFlujo();
+        });
+      }
+    }
+
+    //Configurar pestañas de navegación
+    document.addEventListener('DOMContentLoaded', function() {
+      // Inicializar gráficos
+      inicializarGraficos();
+      
+      // Inicializar flujo de caja
+      inicializarFlujoCaja();
+      
+      // Configurar pestañas
+      const tabButtons = document.querySelectorAll('.tab-button');
+      const tabPanels = document.querySelectorAll('.tab-panel');
+      
+      tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          // Desactivar todas las pestañas
+          tabButtons.forEach(btn => btn.classList.remove('active'));
+          tabPanels.forEach(panel => panel.classList.add('hidden'));
+          
+          // Activar pestaña seleccionada
+          button.classList.add('active');
+          const targetPanel = document.getElementById(button.dataset.target);
+          if (targetPanel) {
+            targetPanel.classList.remove('hidden');
+          }
+        });
+      });
+    });
+  </script>
+  
+  <!-- Cargar archivos de funcionalidad -->
+  <script src="js/graficos.js"></script>
+  <script src="js/flujo_caja.js"></script>
+  <script src="js/nominas.js"></script>
+  <script src="js/facturas.js"></script>
+
+</body>
+</html>
